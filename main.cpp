@@ -1,36 +1,59 @@
 #include <iostream>
 #include <vector>
 #include <climits>
+#include <numeric>
 
-int maxSubArray(std::vector<int>& nums) {
-    //How is this only 51.74% faster for online subs.. wtf
+std::vector<int> sumEvenAfterQueries(std::vector<int>& nums, std::vector<std::vector<int>>& queries) {
+
     /**
-     * Notes
-     * - The current pass used 68mb in space, that's a bit shit. 01/20/2022 14:21 Accepted 211 ms 67.8 MB cpp
-     * - 01/20/2022 16:28	Accepted	122 ms	67.8 MB	cpp
+     * @params nums
+     * Vector of values
+     *
+     * @param queries
+     * Vector of vector containing mutations - {int value, int target index}
      */
-    //Let's get the size of the array first.
-    //int size = nums.size();
-    https://docs.microsoft.com/en-us/cpp/c-language/cpp-integer-limits?view=msvc-170
-    //-2147483647, perfection. Honestly I could just set it but look at it, it's so clean and simple. Now max will work against all negative sets + 0.
-    int max = INT_MIN, current = 0;
 
-    for(std::size_t i = 0; i < nums.size(); i++){
-        current = std::max(nums[i],current + nums[i]);
-        //The max sum is set by comparing the current and the previous max.
-        max = std::max(max, current);
+    std::vector<int> ans;
+    //I added the check, when testing I realized oh shit that could be an issue.
+    if(nums.size() == queries.size()){
+        //Ternary op using custom binary. It's cleaner to do this.
+        //for(auto value : nums){if(value % 2 == 0){}}
+
+        //God this is so fucking cleaaaaan
+        auto accumulateSum = std::accumulate(std::begin(nums), std::end(nums), 0, [](int x, int y){ return y % 2 == 0 ? x+y : x; });
+
+        //Sanity check
+        //std::cout << accumulateSum << std::endl;
+
+        //Query for each.
+        for(auto query : queries){
+            //Loop goes through each query, for ref to access the query its
+            /*
+             * query[0] - value
+             * query[1] - target
+             */
+            //Def value and target
+            //At the start value is set to the query value and target is set to query target index.
+            auto value = query[0], target = query[1];
+            //If the nums[target] in this case on pass 1 value of 1 on the original array is even then summarize value should be sum - target value.
+            if (nums[target] % 2 == 0) accumulateSum -=nums[target];
+            nums[target] += value;
+            //Similar to condition above
+            if(nums[target] % 2 == 0) accumulateSum += nums[target];
+            //Put the value into the answer vec
+            ans.emplace_back(accumulateSum);
+        }
+    }else{
+        std::cout << "The size of queries and nums does not match. Exit" << std::endl;
     }
-    //Return the max.
-    return max;
+    return ans;
 }
 
 int main() {
-
-    std::vector<int> sample = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
-    std::vector<int> edgeA = {-1, -6, -7, -3};
-    std::vector<int> edgeB = {0};
-    std::cout << maxSubArray(sample) << std::endl;
-    std::cout << maxSubArray(edgeA) << std::endl;
-    std::cout << maxSubArray(edgeB) << std::endl;
+    std::vector<int> nums = {1,2,3,4,9,6};
+    std::vector<std::vector<int>> queries = {{1,0},{-3,1},{-4,0},{2,3}};
+    for(auto x : sumEvenAfterQueries(nums,queries)) {
+        std::cout << x << std::endl;
+    }
     return 0;
 }
